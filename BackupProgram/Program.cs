@@ -6,25 +6,32 @@ namespace BackupProgram
 {
     class Program
     {
-        static string sourceDirPath;
-        static string destinationDirPath;
+
         static void Main(string[] args)
         {
-            sourceDirPath = Properties.Settings.Default.SourceFolder;
-            destinationDirPath = Properties.Settings.Default.DestinationFolder;
+            Worker folders = new Worker();
 
-            CheckFilesInFolder();
+            folders.Settings = new Settings();
 
-            InitialSetup();
+            folders.DefaultSetup();
 
-            SetupSourceFolder();
+            Console.WriteLine("Первичная настройка завершена.");
 
-            CheckFilesInFolder();
+            folders.PrintSettings();
 
-            CreateBackupFolder();
+            Console.WriteLine("Установление новых настроек...");
+
+            string newPath1 = @"C:\Users\Dan\Desktop\Example\SourceFolder";
+            string newPath2 = @"C:\Users\Dan\Desktop\Example2";
+
+            folders.UpdateFoldersSettings(newPath1, newPath2);
+
+            folders.Backup();
 
             ReadKey();
         }
+
+        
 
         static void CheckFilesInFolder()
         {
@@ -71,8 +78,10 @@ namespace BackupProgram
             //Добавить проверку на существование папок перед их созданием
             dirInfo.CreateSubdirectory(subpath1);
             dirInfo.CreateSubdirectory(subpath2);
+            
         }
 
+        /*
         //Создание текстового файла в исходной папке для будущей реализации копирвания файлов из одной папки в другую
         static void SetupSourceFolder()
         {
@@ -104,7 +113,7 @@ namespace BackupProgram
                 }
             }
         }
-
+        
         static void CreateBackupFolder()
         {
             string path = $@"{destinationDirPath}";
@@ -128,6 +137,7 @@ namespace BackupProgram
                 Console.WriteLine("Резервная папка была создана");
             }
         }
+        */
     }
 }
 
