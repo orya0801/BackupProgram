@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,24 +9,24 @@ namespace BackupProgram
 {
     class Folders
     {
-        string sourceFolderPath;
+        StringCollection sourceFolderPaths;
         string destinationFolderPath;
 
         public Folders(Settings settings)
         {
-            sourceFolderPath = $"{settings.SourceFolderPath}";
+            sourceFolderPaths = settings.SourceFolderPaths;
             destinationFolderPath = $"{settings.DestinationFolderPath}";
         }
 
-        public string SourceFolderPath
+        public StringCollection SourceFolderPaths
         {
             get
             {
-                return sourceFolderPath;
+                return sourceFolderPaths;
             }
             set
             {
-                SourceFolderPath = value;
+                SourceFolderPaths = value;
             }
         }
 

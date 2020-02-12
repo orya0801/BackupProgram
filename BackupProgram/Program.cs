@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.IO;
 using static System.Console;
 
@@ -14,18 +15,19 @@ namespace BackupProgram
                 Settings = new Settings()
             };
 
-            folders.DefaultSetup();
 
-            Console.WriteLine("Первичная настройка завершена.");
+
+            Properties.Settings.Default.NumberOfStarts += 1;
+            Properties.Settings.Default.Save();
+
+
+            if (Properties.Settings.Default.NumberOfStarts == 1)
+            {
+                folders.SetDefaultFolders();
+
+            }
 
             folders.PrintSettings();
-
-            Console.WriteLine("Установление новых настроек...");
-
-            string newPath1 = @"C:\Users\Dan\Desktop\Example\SourceFolder";
-            string newPath2 = @"C:\Users\Dan\Desktop\Example2";
-
-            folders.UpdateFoldersSettings(newPath1, newPath2);
 
             folders.Backup();
 
@@ -33,6 +35,7 @@ namespace BackupProgram
         }
 
         
+
 
         static void CheckFilesInFolder()
         {
@@ -79,7 +82,7 @@ namespace BackupProgram
             //Добавить проверку на существование папок перед их созданием
             dirInfo.CreateSubdirectory(subpath1);
             dirInfo.CreateSubdirectory(subpath2);
-            
+
         }
 
         /*
