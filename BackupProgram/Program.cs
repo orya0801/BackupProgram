@@ -9,9 +9,10 @@ namespace BackupProgram
 
         static void Main(string[] args)
         {
-            Worker folders = new Worker();
-
-            folders.Settings = new Settings();
+            Worker folders = new Worker
+            {
+                Settings = new Settings()
+            };
 
             folders.DefaultSetup();
 
