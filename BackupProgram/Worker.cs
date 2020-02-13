@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BackupProgram
 {
@@ -34,7 +30,7 @@ namespace BackupProgram
         {
             Console.WriteLine("Это первый запуск программы на этом компьютере. Для начала работы требуется провести начальную настройку.");
             int numberOfFolders = SetNumberOfSourceFolders();
-            setPathsToSourceFolders(numberOfFolders);
+            SetPathsToSourceFolders(numberOfFolders);
             SetDestinationFolder();
             UpdateFoldersSettings();
             Console.WriteLine("Первичная настройка завершена.");
@@ -61,7 +57,7 @@ namespace BackupProgram
             Properties.Settings.Default.Save();
         }
 
-        private void setPathsToSourceFolders(int numberOfFolders)
+        private void SetPathsToSourceFolders(int numberOfFolders)
         {
             Console.WriteLine("Введите пути до исходных папок");
             string pathToSourceFolder;
@@ -75,10 +71,9 @@ namespace BackupProgram
             Properties.Settings.Default.Save();
         }
 
-        //Добавить проверку на отриц. знач.
         private int SetNumberOfSourceFolders()
         {
-            Console.Write("Введите количество папок: ");
+            Console.Write("Введите количество исходных папок: ");
             int numberOfFolders = 0;
             bool isInt = false;
             while (!isInt)
@@ -86,7 +81,9 @@ namespace BackupProgram
                 try
                 {
                     numberOfFolders = int.Parse(Console.ReadLine());
-                    isInt = true;
+                    if (numberOfFolders > 0)
+                        isInt = true;
+                    else Console.WriteLine("Количество папок должно представлять положительное число. Введите еще раз: ");
                 }
                 catch (OverflowException)
                 {
@@ -103,65 +100,7 @@ namespace BackupProgram
         public void UpdateDestinationFolder()
         {
             SetDestinationFolder();
-        }
-
-        //Функция InitialSetup выполняет первичную настройку приложения
-        public void DefaultSetup()
-        {
-            //Установка пути до исходной и целевой папок по умолчанию (создание папки WorkingFolders в файле приложения)
-            string path = Directory.GetCurrentDirectory();
-            string subpath = @"WorkingFolders";
-            string workingFolders = Path.Combine(path, subpath);
-
-            DirectoryInfo workingFolderPath = new DirectoryInfo(workingFolders);
-
-            if (!workingFolderPath.Exists)
-            {
-                //Создание папки WorkingFolders в файле проекта
-                workingFolderPath.Create();
-
-                //Настройка дочерних директорий папки Working Folders
-                string subpathDest = @"DestinationFolder";
-                string subpathSource = @"SourceFolder";
-
-                DirectoryInfo dirInfo = new DirectoryInfo(workingFolders);
-
-                //Создание дочерних директорий папки Working Folders
-                dirInfo.CreateSubdirectory(subpathDest);
-                dirInfo.CreateSubdirectory(subpathSource);
-                SetupSourceFolder();
-            }
-        }
-
-        //Создание текстового файла в папке SourceFolder для демонстрации работы программы при дефолтных настройках
-        private void SetupSourceFolder()
-        {
-            string path = $@"{folders.SourceFolderPaths}\hello.txt";
-
-            FileInfo fileInfo = new FileInfo(path);
-
-            //Проверка существования hello.txt
-            if (!fileInfo.Exists)
-            {
-                fileInfo.Create().Close();
-
-                string text = "Привет, мир!";
-
-                //Заполнение текстового фалйа
-                try
-                {
-                    using (StreamWriter sw = new StreamWriter(path, false, System.Text.Encoding.Default))
-                    {
-                        sw.WriteLine(text);
-                    }
-
-                    Console.WriteLine("Запись выполнена");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
-            }
+            UpdateFoldersSettings();
         }
 
         //Установка новых путей до папок
@@ -170,6 +109,29 @@ namespace BackupProgram
             folders = new Folders(new Settings());
         }
 
+        public void AddSourceFolder()
+        {
+            Console.WriteLine("Введите путь до новой исходной папки:");
+            string pathToSourceFolder = Console.ReadLine();
+            bool isPathExists = false;
+            while (!isPathExists)
+            {
+                if (Directory.Exists(pathToSourceFolder))
+                {
+                    isPathExists = true;
+                }
+                else
+                {
+                    Console.WriteLine("Папки не существует. Введите другой путь: ");
+                    pathToSourceFolder = Console.ReadLine();
+                }
+            }
+            Properties.Settings.Default.SourceFolders.Add(pathToSourceFolder);
+            Properties.Settings.Default.Save();
+            UpdateFoldersSettings();
+            PrintSourceFolders();
+        }
+        
         public void DeleteSourceFolder()
         {
             PrintSourceFolders();
@@ -178,6 +140,7 @@ namespace BackupProgram
             folders.SourceFolderPaths.RemoveAt(number - 1);
             Properties.Settings.Default.SourceFolders = folders.SourceFolderPaths;
             Properties.Settings.Default.Save();
+            UpdateFoldersSettings();
         }
 
         public void PrintSourceFolders()
@@ -237,15 +200,21 @@ namespace BackupProgram
                         foreach (var item in sourceDir.GetFiles())
                         {
                             pathToFile = Path.Combine(newFolderPath, item.Name + ".bak");
-                            item.CopyTo(pathToFile, true);
-                            Console.WriteLine($"Добавлен файл: {pathToFile}");
+                            FileInfo directory = new FileInfo(pathToFile);
+                            if (!directory.Exists)
+                            {
+                                item.CopyTo(pathToFile, true);
+                                Console.WriteLine($"Добавлен файл: {pathToFile}");
+                            }
+                            else Console.WriteLine($"Ошибка при копировании:\n\tФайл {pathToFile} уже существует. Возможно указано 2 или более одинаковых исходных директорий.");
+                            
                         }
                     }
                     else Console.WriteLine("Не удалось найти целевую папку: " + folder);
                 }
                 Properties.Settings.Default.NumberOfStarts += 1;
                 Properties.Settings.Default.Save();
-                Console.WriteLine("Резервное копирование завершено");
+                Console.WriteLine("Резервное копирование завершено\n");
             }
             catch (Exception e)
             {
