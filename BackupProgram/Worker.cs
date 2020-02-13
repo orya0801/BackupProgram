@@ -36,11 +36,11 @@ namespace BackupProgram
             int numberOfFolders = SetNumberOfSourceFolders();
             setPathsToSourceFolders(numberOfFolders);
             SetDestinationFolder();
-            UpdateFoldersSettings(Properties.Settings.Default.SourceFolders, Properties.Settings.Default.DestinationFolder);
+            UpdateFoldersSettings();
             Console.WriteLine("Первичная настройка завершена.");
         }
 
-        private void SetDestinationFolder()
+        public void SetDestinationFolder()
         {
             Console.WriteLine("Введите путь до целевой папки");
             string pathToDestFolder = Console.ReadLine();
@@ -61,7 +61,7 @@ namespace BackupProgram
             Properties.Settings.Default.Save();
         }
 
-        private  void setPathsToSourceFolders(int numberOfFolders)
+        private void setPathsToSourceFolders(int numberOfFolders)
         {
             Console.WriteLine("Введите пути до исходных папок");
             string pathToSourceFolder;
@@ -100,6 +100,10 @@ namespace BackupProgram
             return numberOfFolders;
         }
 
+        public void UpdateDestinationFolder()
+        {
+            SetDestinationFolder();
+        }
 
         //Функция InitialSetup выполняет первичную настройку приложения
         public void DefaultSetup()
@@ -161,20 +165,36 @@ namespace BackupProgram
         }
 
         //Установка новых путей до папок
-        public void UpdateFoldersSettings(StringCollection sourceFolder, string destFolder)
+        public void UpdateFoldersSettings()
         {
-            Properties.Settings.Default.SourceFolders = sourceFolder;
-            Properties.Settings.Default.DestinationFolder = destFolder;
-            Properties.Settings.Default.Save();
-
             folders = new Folders(new Settings());
+        }
+
+        public void DeleteSourceFolder()
+        {
+            PrintSourceFolders();
+            Console.WriteLine("Введите номер папки, которую хотите удалить");
+            int number = int.Parse(Console.ReadLine());
+            folders.SourceFolderPaths.RemoveAt(number - 1);
+            Properties.Settings.Default.SourceFolders = folders.SourceFolderPaths;
+            Properties.Settings.Default.Save();
+        }
+
+        public void PrintSourceFolders()
+        {
+            int k = 1;
+            foreach(string folder in folders.SourceFolderPaths)
+            {
+                Console.WriteLine($"{k}: {folder}");
+                k += 1;
+            }
         }
 
         public void PrintSettings()
         {
             Console.WriteLine("Текущие настройки: ");
             Console.WriteLine("Исходные папки: ");
-            foreach(string folderPath in folders.SourceFolderPaths)
+            foreach (string folderPath in folders.SourceFolderPaths)
             {
                 Console.WriteLine("\t" + folderPath);
             }
@@ -182,8 +202,23 @@ namespace BackupProgram
             Console.WriteLine("\t" + folders.DestinationFolderPath);
         }
 
+        public bool isFirstStart()
+        {
+            bool checkFirstStart = true;
+            if (Properties.Settings.Default.NumberOfStarts != 0 || Properties.Settings.Default.SourceFolders.Count != 0)
+            {
+                checkFirstStart = false;
+            }
+            return checkFirstStart;
+        }
+
         public void Backup()
         {
+            if (isFirstStart())
+            {
+                SetDefaultFolders();
+            }
+            PrintSettings();
             string path = $@"{folders.DestinationFolderPath}";
             string newFolderPath = Path.Combine(path, (DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss")));
 
@@ -194,7 +229,7 @@ namespace BackupProgram
 
                 Console.WriteLine("Резервное копирование...");
                 string pathToFile;
-                foreach(string folder in folders.SourceFolderPaths)
+                foreach (string folder in folders.SourceFolderPaths)
                 {
                     DirectoryInfo sourceDir = new DirectoryInfo($"{folder}");
                     if (sourceDir.Exists)
@@ -206,14 +241,17 @@ namespace BackupProgram
                             Console.WriteLine($"Добавлен файл: {pathToFile}");
                         }
                     }
-                    else Console.WriteLine("Не удалось найти целевую папку: " + folder) ;
+                    else Console.WriteLine("Не удалось найти целевую папку: " + folder);
                 }
+                Properties.Settings.Default.NumberOfStarts += 1;
+                Properties.Settings.Default.Save();
                 Console.WriteLine("Резервное копирование завершено");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return;
             }
+
         }
 
         public void ResetSettings()
@@ -222,7 +260,8 @@ namespace BackupProgram
             Properties.Settings.Default.DestinationFolder = "";
             Properties.Settings.Default.SourceFolders.Clear();
             Properties.Settings.Default.Save();
-
+            UpdateFoldersSettings();
         }
     }
 }
+
